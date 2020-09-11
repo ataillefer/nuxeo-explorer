@@ -25,7 +25,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.nuxeo.apidoc.api.BaseNuxeoArtifact;
+import org.nuxeo.apidoc.api.BaseNuxeoLiveArtifact;
 import org.nuxeo.apidoc.api.BundleGroup;
 import org.nuxeo.apidoc.api.BundleInfo;
 import org.nuxeo.apidoc.api.ComponentInfo;
@@ -33,7 +33,7 @@ import org.nuxeo.ecm.core.api.Blob;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 
-public class BundleInfoImpl extends BaseNuxeoArtifact implements BundleInfo {
+public class BundleInfoImpl extends BaseNuxeoLiveArtifact implements BundleInfo {
 
     protected final String bundleId;
 

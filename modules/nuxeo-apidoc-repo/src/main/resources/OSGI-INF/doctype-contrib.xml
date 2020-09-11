@@ -11,6 +11,7 @@
       <schema name="dublincore" />
       <schema name="file" />
       <schema name="nxdistribution" />
+      <schema name="apidoccommon" />
 
       <facet name="Commentable" />
       <facet name="Versionable" />
@@ -41,12 +42,12 @@
       </subtypes>
     </doctype>
 
-
     <doctype name="NXBundle" extends="OrderedFolder">
       <schema name="common" />
       <schema name="dublincore" />
       <schema name="file" />
       <schema name="nxbundle" />
+      <schema name="apidoccommon" />
 
       <facet name="Commentable" />
       <facet name="Versionable" />
@@ -64,6 +65,7 @@
       <schema name="dublincore" />
       <schema name="file" />
       <schema name="nxcomponent" />
+      <schema name="apidoccommon" />
 
       <facet name="Commentable" />
       <facet name="Versionable" />

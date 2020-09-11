@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2006-2010 Nuxeo SA (http://nuxeo.com/) and others.
+ * (C) Copyright 2020 Nuxeo (http://nuxeo.com/) and others.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,53 +14,24 @@
  * limitations under the License.
  *
  * Contributors:
- *     Thierry Delprat
+ *     Anahide Tchertchian
  */
-package org.nuxeo.apidoc.snapshot;
+package org.nuxeo.apidoc.api;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 
-public class DistributionSnapshotDescImpl implements DistributionSnapshotDesc {
-
-    protected Date created;
-
-    protected String name;
-
-    protected String version;
-
-    protected boolean live;
+/**
+ * Base class for all live artifacts.
+ *
+ * @since 20.0.0
+ */
+public abstract class BaseNuxeoLiveArtifact extends BaseNuxeoArtifact {
 
     protected final List<String> errors = new ArrayList<>();
 
     protected final List<String> warnings = new ArrayList<>();
-
-    @Override
-    public Date getCreationDate() {
-        return created;
-    }
-
-    @Override
-    public Date getReleaseDate() {
-        return null;
-    }
-
-    @Override
-    public String getName() {
-        return name;
-    }
-
-    @Override
-    public String getVersion() {
-        return version;
-    }
-
-    @Override
-    public boolean isLive() {
-        return live;
-    }
 
     @Override
     public List<String> getErrors() {

@@ -19,8 +19,10 @@
 package org.nuxeo.apidoc.snapshot;
 
 import java.util.Date;
+import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 
 public interface DistributionSnapshotDesc {
 
@@ -34,5 +36,45 @@ public interface DistributionSnapshotDesc {
 
     @JsonIgnore
     boolean isLive();
+
+    // errors management
+
+    /**
+     * Returns the errors on this artifact.
+     * <p>
+     * Should be consistent with {@link #getNumErrors()}
+     *
+     * @since 20.0.0
+     */
+    @JsonInclude(value = JsonInclude.Include.NON_EMPTY)
+    List<String> getErrors();
+
+    /**
+     * Sets errors on this artifact.
+     * <p>
+     * Should impact {@link #getNumErrors()}
+     *
+     * @since 20.0.0
+     */
+    void setErrors(List<String> errors);
+
+    /**
+     * Returns the warnings on this artifact.
+     * <p>
+     * Should be consistent with {@link #getNumWarnings()}
+     *
+     * @since 20.0.0
+     */
+    @JsonInclude(value = JsonInclude.Include.NON_EMPTY)
+    List<String> getWarnings();
+
+    /**
+     * Sets warnings on this artifact.
+     * <p>
+     * Should impact {@link #getNumWarnings()}
+     *
+     * @since 20.0.0
+     */
+    void setWarnings(List<String> warnings);
 
 }

@@ -188,4 +188,24 @@ public abstract class BaseNuxeoArtifactDocAdapter extends BaseNuxeoArtifact {
         doc.putContextData(PictureViewsGenerationListener.DISABLE_PICTURE_VIEWS_GENERATION_LISTENER, true);
     }
 
+    @Override
+    public List<String> getErrors() {
+        return safeGet(PROP_ERRORS);
+    }
+
+    @Override
+    public void setErrors(List<String> errors) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public List<String> getWarnings() {
+        return safeGet(PROP_WARNINGS);
+    }
+
+    @Override
+    public void setWarnings(List<String> warnings) {
+        throw new UnsupportedOperationException();
+    }
+
 }

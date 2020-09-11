@@ -22,7 +22,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.nuxeo.apidoc.api.BaseNuxeoArtifact;
+import org.nuxeo.apidoc.api.BaseNuxeoLiveArtifact;
 import org.nuxeo.apidoc.api.PackageInfo;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -30,7 +30,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 /**
  * @since 11.1
  */
-public class PackageInfoImpl extends BaseNuxeoArtifact implements PackageInfo {
+public class PackageInfoImpl extends BaseNuxeoLiveArtifact implements PackageInfo {
 
     protected final List<String> bundles = new ArrayList<>();
 
