@@ -315,21 +315,4 @@ pipeline {
     }
   }
 
-  post {
-    success {
-      script {
-        if (env.UPLOAD_EXPORT == "true" && !hudson.model.Result.SUCCESS.toString().equals(currentBuild.getPreviousBuild()?.getResult())) {
-          slackSend(channel: "${SLACK_CHANNEL}", color: "good", message: "Successfully <${BUILD_URL}|uploaded> nuxeo-explorer reference export for ${NUXEO_IMAGE_VERSION} :robot_face:")
-        }
-      }
-    }
-    unsuccessful {
-      script {
-        if (env.UPLOAD_EXPORT == "true") {
-          slackSend(channel: "${SLACK_CHANNEL}", color: "danger", message: "Failed to <${BUILD_URL}|upload> nuxeo-explorer reference export for ${NUXEO_IMAGE_VERSION}")
-        }
-      }
-    }
-  }
-
 }
