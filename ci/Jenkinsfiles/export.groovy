@@ -26,7 +26,7 @@
 * The snashot will then be exported and uploaded to a target explorer instance.
 */
 properties([
-  [$class: 'GithubProjectProperty', projectUrlStr: 'https://github.com/nuxeo/nuxeo-explorer/'],
+  [$class: 'GithubProjectProperty', projectUrlStr: 'https://github.com/ataillefer/nuxeo-explorer/'],
   [$class: 'BuildDiscarderProperty', strategy: [$class: 'LogRotator', daysToKeepStr: '60', numToKeepStr: '10', artifactNumToKeepStr: '5']],
   disableConcurrentBuilds(),
 ])
@@ -152,21 +152,21 @@ pipeline {
       }
     }
 
-    stage('Set Labels') {
-      steps {
-        container('maven') {
-          echo """
-          ----------------------------------------
-          Set Kubernetes resource labels
-          ----------------------------------------
-          """
-          echo "Set label 'branch: export' on pod ${NODE_NAME}"
-          sh """
-            kubectl label pods ${NODE_NAME} branch=export
-          """
-        }
-      }
-    }
+    // stage('Set Labels') {
+    //   steps {
+    //     container('maven') {
+    //       echo """
+    //       ----------------------------------------
+    //       Set Kubernetes resource labels
+    //       ----------------------------------------
+    //       """
+    //       echo "Set label 'branch: export' on pod ${NODE_NAME}"
+    //       sh """
+    //         kubectl label pods ${NODE_NAME} branch=export
+    //       """
+    //     }
+    //   }
+    // }
 
     stage('Build Docker Image') {
       steps {
@@ -182,132 +182,15 @@ pipeline {
             script {
               def moduleDir = 'docker/nuxeo-explorer-export-docker'
               def oneLineClid = getClid("${INSTANCE_CLID}")
-              sh """#!/bin/bash +x
-                CONNECT_EXPLORER_CLID=${oneLineClid} \
-                CONNECT_EXPORT_CLID=${oneLineClid} \
-                envsubst < ${moduleDir}/skaffold.yaml > ${moduleDir}/skaffold.yaml~gen
-              """
               sh """
-                skaffold build -f ${moduleDir}/skaffold.yaml~gen
+                echo "oneLineClid=${oneLineClid}"
+                cat ${moduleDir}/skaffold.yaml
+                CONNECT_EXPLORER_CLID="${oneLineClid}" envsubst < ${moduleDir}/skaffold.yaml > ${moduleDir}/skaffold.yaml~gen
+                cat ${moduleDir}/skaffold.yaml~gen
               """
-            }
-          }
-        }
-      }
-    }
-
-    stage('Deploy Export Preview and Perform Export') {
-      steps {
-        container('maven') {
-          dir('helm/export') {
-            echo """
-            ----------------------------------------
-            Deploy Preview environment
-            ----------------------------------------"""
-            // first substitute docker image names and versions
-            sh """
-              echo ${CONNECT_EXPLORER_URL}
-              echo ${NUXEO_EXPLORER_PACKAGE}
-              mv values.yaml values.yaml.tosubst
-              envsubst < values.yaml.tosubst > values.yaml
-            """
-            // second create target namespace (if doesn't exist) and copy secrets to target namespace
-            script {
-              try {
-                boolean nsExists = sh(returnStatus: true, script: "kubectl get namespace ${PREVIEW_NAMESPACE}") == 0
-                if (nsExists) {
-                  // Previous preview deployment needs to be scaled to 0 to be replaced correctly
-                  sh "kubectl --namespace ${PREVIEW_NAMESPACE} scale deployment export --replicas=0"
-                } else {
-                  sh "kubectl create namespace ${PREVIEW_NAMESPACE}"
-                }
-                sh "kubectl --namespace platform get secret kubernetes-docker-cfg -ojsonpath='{.data.\\.dockerconfigjson}' | base64 --decode > /tmp/config.json"
-                sh """kubectl create secret generic kubernetes-docker-cfg \
-                    --namespace=${PREVIEW_NAMESPACE} \
-                    --from-file=.dockerconfigjson=/tmp/config.json \
-                    --type=kubernetes.io/dockerconfigjson --dry-run -o yaml | kubectl apply -f -"""
-                String previewCommand = "jx step helm install --namespace ${PREVIEW_NAMESPACE} --name ${PREVIEW_NAMESPACE} --verbose ."
-
-                // third build and deploy the chart
-                // waiting for https://github.com/jenkins-x/jx/issues/5797 to be fixed in order to remove --source-url
-                sh """
-                  jx step helm build --verbose
-                  mkdir target && helm template . --output-dir target
-                  ${previewCommand}
-                """
-
-                String nuxeoUrl = "export.${PREVIEW_NAMESPACE}.svc.cluster.local/nuxeo"
-                String explorerUrl = "${nuxeoUrl}/site/distribution"
-                echo """
-                ----------------------------------------
-                Perform export on ${explorerUrl}
-                ----------------------------------------
-                """
-                String distribId = "${params.SNAPSHOT_NAME}-${NUXEO_IMAGE_VERSION}".replaceAll(" ", "%20")
-                String curlCommand = "curl --user Administrator:Administrator ${CURL_OPTIONS}"
-                sh """
-                  kubectl rollout status deployment export \
-                    --timeout=15m \
-                    --namespace=${PREVIEW_NAMESPACE}
-
-                  ${curlCommand} ${explorerUrl} --output home.html
-                  ${curlCommand} -d 'name=${params.SNAPSHOT_NAME}' -d 'version=${NUXEO_IMAGE_VERSION}' ${explorerUrl}/save
-                  ${curlCommand} ${explorerUrl} --output home_after_save.html
-                  ${curlCommand} ${explorerUrl}/download/${distribId} --output export.zip
-                """
-                if (params.PERFORM_JSON_EXPORT) {
-                  sh """
-                    ${curlCommand} ${explorerUrl}/${distribId}/json --output export.json
-                  """
-                }
-              } finally {
-                // cleanup jx namespace
-                sh """
-                  jx step helm delete export \
-                    --namespace=${PREVIEW_NAMESPACE} \
-                    --purge
-                  kubectl delete ns ${PREVIEW_NAMESPACE} \
-                    --ignore-not-found=true
-                """
-              }
-            }
-          }
-        }
-      }
-      post {
-        always {
-          archiveArtifacts allowEmptyArchive: true, artifacts: '**/home*.html, **/export.json, **/export.zip, **/requirements.lock, **/charts/*.tgz, **/target/**/*.yaml'
-        }
-      }
-    }
-
-    stage('Upload Snapshot to Explorer') {
-      when {
-        not {
-          environment name: 'UPLOAD_EXPORT', value: 'false'
-        }
-      }
-      steps {
-        container('maven') {
-          script {
-            echo """
-            ----------------------------------------
-            Upload Export to ${UPLOAD_URL}
-            ----------------------------------------"""
-            withCredentials([usernameColonPassword(credentialsId: UPLOAD_CREDS_ID, variable: 'EXPLORER_PASS')]) {
-              String curlCommand = "curl --user ${EXPLORER_PASS} ${CURL_OPTIONS}"
-              def aliases = 'latest'
-              if (!params.UPLOAD_AS_PROMOTED) {
-                def xVersion = sh(returnStdout: true, script: "perl -pe 's/\\b(\\d+)(?=\\D*\$)/x/e' <<< ${NUXEO_IMAGE_VERSION}").trim()
-                aliases = "next\n${xVersion}"
-              }
-              if (!params.UPLOAD_ALIASES.trim().isEmpty()) {
-                aliases += "\n${params.UPLOAD_ALIASES}"
-              }
-              sh """
-                ${curlCommand} -Fsnap=@\$(find "\$(pwd)"/helm/export/export.zip -type f) -F \$'nxdistribution:aliases=${aliases}' ${UPLOAD_URL}/site/distribution/uploadDistrib
-              """
-              currentBuild.description = "Uploaded reference export for ${NUXEO_IMAGE_VERSION}"
+              // sh """
+              //   skaffold build -f ${moduleDir}/skaffold.yaml~gen
+              // """
             }
           }
         }
